@@ -8,6 +8,7 @@ from urllib.error import HTTPError
 
 import json
 import os
+import requests
 
 from flask import Flask
 from flask import request
@@ -60,7 +61,7 @@ def processRequest(req):
             i=i+1
             return data 
     else:
-        return{}
+        return{{"results":"indi"}}
     res = makeWebhookResult(data)
     return res
 
@@ -119,5 +120,4 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
 
     print("Starting app on port %d" % port)
-
-app.run(debug=False, port=port, host='0.0.0.0')
+    app.run(debug=True)
