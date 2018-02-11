@@ -1,10 +1,14 @@
-#!/usr/bin/env python
+from __future__ import print_function
+from future.standard_library import install_aliases
+install_aliases()
 
-import urllib.request
+from urllib.parse import urlparse, urlencode
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
+
 import json
 import os
-import requests
-from bs4 import BeautifulSoup
+
 from flask import Flask
 from flask import request
 from flask import make_response
@@ -13,41 +17,107 @@ from flask import make_response
 app = Flask(__name__)
 
 
-@app.route('/webhook', methods=['GET'])
+@app.route('/webhook', methods=['POST'])
 def webhook():
-	req = request.args.get('q')
-	res = processRequest(req)
-	return res
+    req = request.get_json(silent=True, force=True)
 
-def processRequest(q):
-	if "news" in q or "news updates" in q or "new stories" in q and "fetch" in q or "get" in q or "tell" in q :
-		y = allnews()
+    print("Request:")
+    print(json.dumps(req, indent=4))
 
-	elif '/' in q or '+' in q or '*' in q or '-' in q:
-		y = mathsans(q)
+    res = processRequest(req)
 
-	return y
+    res = json.dumps(res, indent=4)
+    # print(res)
+    r = make_response(res)
+    r.headers['Content-Type'] = 'application/json'
+    return r
 
-def allnews():
-    url = 'https://newsapi.org/v2/top-headlines?sources=bbc-news&apiKey=5cab5d5971064472bb501bd1d73a7a2d'
-    response = requests.get(url)
-    r = response.json()
-    k = json.dumps(r, indent=4)
-    res = json.loads(k)
-    i=0
-    result = ""
-    while i<5:
-    	result += str(i)
-    	result += res['articles'][i]['title']
-    	result += res['articles'][i]['description']
-    	result += "........"
-    	i=i+1
-    return result
 
-def mathsans(q):
-	url = 'http://api.mathjs.org/v1/?expr='+q
-	p = requests.get(url).text
-	return p
+def processRequest(req):
+    data=""
+    if req.get("result").get("action") == "yahooWeatherForecast":
+        baseurl = "https://query.yahooapis.com/v1/public/yql?"
+        yql_query = makeYqlQuery(req)
+        if yql_query is None:
+            return {}
+        yql_url = baseurl + urlencode({'q': yql_query}) + "&format=json"
+        result = urlopen(yql_url).read()
+        data = json.loads(result)
+
+    elif req.get("result").get("action") == "newsupdates":
+        url = 'https://newsapi.org/v2/top-headlines?sources=bbc-news&apiKey=5cab5d5971064472bb501bd1d73a7a2d'
+        response = requests.get(url)
+        r = response.json()
+        k = json.dumps(r, indent=4)
+        res = json.loads(k)
+        print()
+        i=0
+        data="NEWS\n"
+        y=""
+        while i<5:
+            data+=(res['articles'][i]['title'])+"\n"
+            data+=(res['articles'][i]['description'])+"\n\n"
+            i=i+1
+            return data 
+    else:
+        return{}
+    res = makeWebhookResult(data)
+    return res
+
+
+def makeYqlQuery(req):
+    result = req.get("result")
+    parameters = result.get("parameters")
+    city = parameters.get("geo-city")
+    if city is None:
+        return None
+
+    return "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='" + city + "')"
+
+
+def makeWebhookResult(data):
+    #query = data.get('query')
+    #if query is None:
+    #    return {}
+
+    #result = query.get('results')
+    #if result is None:
+    #    return {}
+
+    #channel = result.get('channel')
+    #if channel is None:
+    #    return {}
+
+    #item = channel.get('item')
+    #location = channel.get('location')
+    #units = channel.get('units')
+    #if (location is None) or (item is None) or (units is None):
+    #    return {}
+
+    #condition = item.get('condition')
+    #if condition is None:
+    #    return {}
+
+    # print(json.dumps(item, indent=4))
+
+#    speech = "Today the weather in " + location.get('city') + ": " + condition.get('text') + \
+#             ", And the temperature is " + condition.get('temp') + " " + units.get('temperature')
+    speech = data
+    print("Response:")
+    print(speech)
+
+    return {
+        "speech": speech,
+        "displayText": speech,
+        # "data": data,
+        # "contextOut": [],
+        "source": "apiai-weather-webhook-sample"
+    }
+
 
 if __name__ == '__main__':
-    app.run()
+    port = int(os.getenv('PORT', 5000))
+
+    print("Starting app on port %d" % port)
+
+app.run(debug=False, port=port, host='0.0.0.0')
