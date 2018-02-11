@@ -1,6 +1,6 @@
-from __future__ import print_function
-from future.standard_library import install_aliases
-install_aliases()
+#from __future__ import print_function
+#from future.standard_library import install_aliases
+#install_aliases()
 
 from urllib.parse import urlparse, urlencode
 from urllib.request import urlopen, Request
@@ -58,8 +58,7 @@ def processRequest(req):
         while i<5:
             data+=(res['articles'][i]['title'])+"\n"
             data+=(res['articles'][i]['description'])+"\n\n"
-            i=i+1
-            return data 
+            i=i+1 
     else:
         return{{"results":"indi"}}
     res = makeWebhookResult(data)
