@@ -1,14 +1,8 @@
-#from __future__ import print_function
-#from future.standard_library import install_aliases
-#install_aliases()
-from urllib.parse import urlparse, urlencode
-from urllib.request import urlopen, Request
-from urllib.error import HTTPError
-
+import urllib.request
 import json
 import os
 import requests
-
+from bs4 import BeautifulSoup
 from flask import Flask
 from flask import request
 from flask import make_response
@@ -114,7 +108,7 @@ def makeWebhookResult(data):
 
 '''
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
+    #port = int(os.getenv('PORT', 5000))
 
-    print("Starting app on port %d" % port)
+    #print("Starting app on port %d" % port)
     app.run(debug=True)
