@@ -20,6 +20,7 @@ app = Flask(__name__)
 @app.route('/webhook', methods=['GET'])
 def webhook():
 	return "Hello"
+'''	
 	req = request.get_json(silent=True, force=True)
 	print("Request:")
 	print(json.dumps(req, indent=4))
@@ -111,7 +112,7 @@ def makeWebhookResult(data):
         "source": "apiai-weather-webhook-sample"
     }
 
-
+'''
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
 
